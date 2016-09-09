@@ -1,0 +1,115 @@
+{
+  "sbg:id": "sambamba-slice",
+  "id": "#sambamba-slice",
+  "inputs": [
+    {
+      "type": ["null", "File"],
+      "label": "bam",
+      "description": "bam to split",
+      "streamable": false,
+      "default": "",
+      "id": "#bam",
+      "inputBinding": {
+        "secondaryFiles": [
+          ".bai"
+        ],
+        "position": 0,
+        "separate": true,
+        "sbg:cmdInclude": true
+      },
+      "required": false
+    },
+    {
+      "type": ["null", "int"],
+      "label": "contig",
+      "description": "contig to retrieve",
+      "streamable": false,
+      "default": "",
+      "id": "#contig",
+      "inputBinding": {
+        "secondaryFiles": [
+          ".bai"
+        ],
+        "position": 0,
+        "separate": true,
+        "sbg:cmdInclude": true
+      },
+      "required": false
+    }
+  ],
+  "outputs": [
+    {
+      "type": ["null", "File"],
+      "label": "std_out",
+      "description": "standard output",
+      "streamable": false,
+      "default": "",
+      "id": "#std_out",
+      "outputBinding": {
+        "glob": "\"std.out\"",
+        "sbg:metadata": {
+          "org": "cgp"
+        }
+      }
+    },
+    {
+      "type": ["null", "File"],
+      "label": "genotype comparison results",
+      "description": "genotype comarison results",
+      "streamable": false,
+      "default": "",
+      "id": "#genotype_comparison_results",
+      "outputBinding": {
+        "glob": {
+          "engine": "#cwl-js-engine",
+          "script": "\"*.bam\"",
+          "class": "Expression"
+        },
+        "sbg:inheritMetadataFrom": "#tumour_bam",
+        "sbg:metadata": {
+          "org": "cgp"
+        }
+      }
+    }
+  ],
+  "requirements": [],
+  "hints": [
+    {
+      "class": "DockerRequirement",
+      "dockerPull": "cgrlab/sambamba:latest",
+      "dockerLoad": "",
+      "dockerFile": "",
+      "dockerImageId": "",
+      "dockerOutputDirectory": ""
+    },
+    {
+      "class": "sbg:CPURequirement",
+      "value": 1
+    },
+    {
+      "class": "sbg:MemRequirement",
+      "value": 1000
+    }
+  ],
+  "label": "sambamba-slice",
+  "class": "CommandLineTool",
+  "baseCommand": [
+    "/opt/sambamba/build/sambamba slice -o sliced.bam"
+  ],
+  "arguments": [
+    {
+      "position": 1,
+      "separate": true
+    },
+    {
+      "position": 99,
+      "separate": true,
+      "valueFrom": {
+        "engine": "#cwl-js-engine",
+        "script": "\"&& ls -lR\"",
+        "class": "Expression"
+      }
+    }
+  ],
+  "stdout": "std.out"
+}

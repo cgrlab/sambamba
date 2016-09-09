@@ -1,5 +1,6 @@
 
 ```{r include = FALSE}
+
 require(rmarkdown); require(knitr); require(sevenbridges); require(readr)
 
 options(max.print = "99"); opts_knit$set(width = 99)
@@ -47,7 +48,7 @@ input(id = "contig", label = "contig", description = "contig to retrieve", type 
 ```{r arguments, eval=run.mode=="push"}
 
 arguments = CCBList(
-CommandLineBinding(position = 1, Expression(engine = "#cwl-js-engine", valueFrom = '{
+CommandLineBinding(position = 1, separate = TRUE, Expression(engine = "#cwl-js-engine", script = '{
 
 function basename(path) {return path.split("/").reverse()[0];} 
   
@@ -93,8 +94,7 @@ glob = "\"std.out\""),
 output(id = "genotype_comparison_results", label = "genotype comparison results", 
 description = "genotype comarison results", type = "File",
 inheritMetadataFrom = "#tumour_bam", metadata = list(org = "cgp"),
-glob = Expression(engine = "#cwl-js-engine",
-glob = "\"*.bam\""))
+glob = Expression(engine = "#cwl-js-engine", script = "\"*.bam\""))
   
 )
 
