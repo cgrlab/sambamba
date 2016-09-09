@@ -1,0 +1,139 @@
+
+```{r include = FALSE}
+require(rmarkdown); require(knitr); require(sevenbridges); require(readr)
+
+options(max.print = "99"); opts_knit$set(width = 99)
+opts_chunk$set(cache=FALSE, tidy=FALSE)
+
+source("~/sbg_auth.R")
+
+```
+
+<hr>
+
+### base command
+
+```{sh base command, eval=FALSE}
+
+/opt/sambamba/build/sambamba slice -o ch19.bam whole_genome.bam 19
+
+```
+
+http://lomereiter.github.io/sambamba/docs/sambamba-slice.html
+
+<hr>
+
+### docker 
+
+``` cgrlab/sambamba:latest ```
+
+### App ports {.tabset .tabset-fade .tabset-tabs}
+
+#### Inputs
+
+```{r inputs, eval=run.mode=="push"}
+inputs = list(
+  
+input(id = "bam", label = "bam", description = "bam to split", type = "File", secondaryFiles = list(".bai")),
+  
+input(id = "contig", label = "contig", description = "contig to retrieve", type = "integer", secondaryFiles = list(".bai"))
+
+)
+
+```
+
+#### arguments
+
+```{r arguments, eval=run.mode=="push"}
+
+arguments = CCBList(
+CommandLineBinding(position = 1, Expression(engine = "#cwl-js-engine", valueFrom = '{
+
+function basename(path) {return path.split("/").reverse()[0];} 
+  
+var output_name = $job.inputs.bam[0].path.split(".bam")[0]
+tumour_chr = tumour_chr.split(".bam")[0]
+
+for (i = 0; i < $job.inputs.split_references.length; i++) { 
+
+var reference_chr = $job.inputs.split_references[i].path.split("chr")[1]
+reference_chr = reference_chr.split(".fa")[0]
+  
+  
+if (reference_chr == tumour_chr) { var matched_chr = $job.inputs.split_references[i]}
+
+}  
+  
+  
+
+return matched_chr.path
+
+  
+}'
+
+
+
+)),
+CommandLineBinding(position = 99, valueFrom = list("\"&& ls -lR\""))
+)
+
+```
+
+#### Outputs
+
+```{r output, eval = run.mode=="push"}
+
+outputs = list(
+
+output(id = "std_out", label = "std_out", 
+description = "standard output", type = "File",
+metadata = list(org = "cgp"),
+glob = "\"std.out\""),
+  
+output(id = "genotype_comparison_results", label = "genotype comparison results", 
+description = "genotype comarison results", type = "File",
+inheritMetadataFrom = "#tumour_bam", metadata = list(org = "cgp"),
+glob = Expression(engine = "#cwl-js-engine",
+glob = "\"*.bam\""))
+  
+)
+
+
+```
+
+### Define Tool Object and Push to Platform {.tabset .tabset-fade .tabset-tabs}
+  
+#### Tool object
+
+```{r 5 create tool object, eval=run.mode=="push"}
+
+tool <- Tool(
+id = "sambamba-slice", 
+label = "sambamba-slice",
+hints = requirements(docker(pull = "cgrlab/sambamba:latest"), cpu(1), mem(1000)),
+baseCommand = "/opt/sambamba/build/sambamba slice -o sliced.bam",
+stdout = "std.out",
+inputs = inputs,
+argument = arguments,
+outputs = outputs)
+
+
+```
+
+#### Make cwl file
+
+```{r make cwl, eval=destination=="platform"}
+
+write(tool$toJSON(pretty = TRUE), "../sambamba-slice.json")
+
+```
+
+#### Push app to sbg platform
+
+```{r 6 push app to sbg, eval=destination=="platform"}
+
+project$app_add("sambamba-slice", tool)
+
+
+```
+
