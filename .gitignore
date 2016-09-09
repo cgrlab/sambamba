@@ -1,1 +1,3 @@
 build/
+*.Rproj*
+cwl/wrapper_scripts/*.html
