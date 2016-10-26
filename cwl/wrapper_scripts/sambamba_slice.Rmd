@@ -35,9 +35,9 @@ http://lomereiter.github.io/sambamba/docs/sambamba-slice.html
 ```{r inputs, eval=run.mode=="push"}
 inputs = list(
   
-input(id = "bam", label = "bam", description = "bam to split", type = "File", secondaryFiles = list(".bai")),
+input(id = "bam", label = "bam", description = "bam to split", type = "File", position = 2, secondaryFiles = list(".bai")),
   
-input(id = "contig", label = "contig", description = "contig to retrieve", type = "integer", secondaryFiles = list(".bai"))
+input(id = "split_reference", label = "split_reference", description = "will grab the contig name from the split reference", type = "File", valueFrom = list('{return $job.inputs.split_reference.metadata.sample_id}'), position = 3)
 
 )
 
@@ -48,33 +48,9 @@ input(id = "contig", label = "contig", description = "contig to retrieve", type 
 ```{r arguments, eval=run.mode=="push"}
 
 arguments = CCBList(
-CommandLineBinding(position = 1, separate = TRUE, Expression(engine = "#cwl-js-engine", script = '{
-
-function basename(path) {return path.split("/").reverse()[0];} 
-  
-var output_name = $job.inputs.bam[0].path.split(".bam")[0]
-tumour_chr = tumour_chr.split(".bam")[0]
-
-for (i = 0; i < $job.inputs.split_references.length; i++) { 
-
-var reference_chr = $job.inputs.split_references[i].path.split("chr")[1]
-reference_chr = reference_chr.split(".fa")[0]
-  
-  
-if (reference_chr == tumour_chr) { var matched_chr = $job.inputs.split_references[i]}
-
-}  
-  
-  
-
-return matched_chr.path
-
-  
-}'
-
-
-
-)),
+CommandLineBinding(position = 1, separate = TRUE, valueFrom = list(
+"{return $job.inputs.bam.metadata.sample_id + '_split_' + $job.inputs.split_reference.metadata.sample_id + '_' + $job.inputs.bam.metadata.sample_type + '.bam'}"
+), prefix = "-o"),
 CommandLineBinding(position = 99, valueFrom = list("\"&& ls -lR\""))
 )
 
@@ -91,9 +67,9 @@ description = "standard output", type = "File",
 metadata = list(org = "cgp"),
 glob = "\"std.out\""),
   
-output(id = "genotype_comparison_results", label = "genotype comparison results", 
-description = "genotype comarison results", type = "File",
-inheritMetadataFrom = "#tumour_bam", metadata = list(org = "cgp"),
+output(id = "sliced_bam", label = "sliced_bam", 
+description = "sliced_bam", type = "File",
+inheritMetadataFrom = "#bam", metadata = list(task_status = "new file"),
 glob = Expression(engine = "#cwl-js-engine", script = "\"*.bam\""))
   
 )
@@ -111,7 +87,7 @@ tool <- Tool(
 id = "sambamba-slice", 
 label = "sambamba-slice",
 hints = requirements(docker(pull = "cgrlab/sambamba:latest"), cpu(1), mem(1000)),
-baseCommand = "/opt/sambamba/build/sambamba slice -o sliced.bam",
+baseCommand = "/opt/sambamba/build/sambamba slice",
 stdout = "std.out",
 inputs = inputs,
 argument = arguments,

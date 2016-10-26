@@ -13,25 +13,27 @@
         "secondaryFiles": [
           ".bai"
         ],
-        "position": 0,
+        "position": 2,
         "separate": true,
         "sbg:cmdInclude": true
       },
       "required": false
     },
     {
-      "type": ["null", "int"],
-      "label": "contig",
-      "description": "contig to retrieve",
+      "type": ["null", "File"],
+      "label": "split_reference",
+      "description": "will grab the contig name from the split reference",
       "streamable": false,
       "default": "",
-      "id": "#contig",
+      "id": "#split_reference",
       "inputBinding": {
-        "secondaryFiles": [
-          ".bai"
-        ],
-        "position": 0,
+        "position": 3,
         "separate": true,
+        "valueFrom": {
+          "engine": "#cwl-js-engine",
+          "script": "{return $job.inputs.split_reference.metadata.sample_id}",
+          "class": "Expression"
+        },
         "sbg:cmdInclude": true
       },
       "required": false
@@ -54,20 +56,20 @@
     },
     {
       "type": ["null", "File"],
-      "label": "genotype comparison results",
-      "description": "genotype comarison results",
+      "label": "sliced_bam",
+      "description": "sliced_bam",
       "streamable": false,
       "default": "",
-      "id": "#genotype_comparison_results",
+      "id": "#sliced_bam",
       "outputBinding": {
         "glob": {
           "engine": "#cwl-js-engine",
           "script": "\"*.bam\"",
           "class": "Expression"
         },
-        "sbg:inheritMetadataFrom": "#tumour_bam",
+        "sbg:inheritMetadataFrom": "#bam",
         "sbg:metadata": {
-          "org": "cgp"
+          "task_status": "new file"
         }
       }
     }
@@ -94,12 +96,18 @@
   "label": "sambamba-slice",
   "class": "CommandLineTool",
   "baseCommand": [
-    "/opt/sambamba/build/sambamba slice -o sliced.bam"
+    "/opt/sambamba/build/sambamba slice"
   ],
   "arguments": [
     {
       "position": 1,
-      "separate": true
+      "prefix": "-o",
+      "separate": true,
+      "valueFrom": {
+        "engine": "#cwl-js-engine",
+        "script": "{return $job.inputs.bam.metadata.sample_id + '_split_' + $job.inputs.split_reference.metadata.sample_id + '_' + $job.inputs.bam.metadata.sample_type + '.bam'}",
+        "class": "Expression"
+      }
     },
     {
       "position": 99,
